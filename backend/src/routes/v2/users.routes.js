@@ -36,17 +36,54 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-//Update user
-router.put("/:id", (req, res, next) => {
+//Update user 
+router.put("/:id", async (req, res, next) => {
   try {
+    //เอา data เดิมจาก id
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json("error: username, email and password are required!");
+    }
+    //สร้าง username , email , password อันใหม่
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        username: username,
+        email: email,
+        password: password,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-password");
+    //response ค่าใหม่กลับ username , email , password
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ error: " user , email and password are not completed" });
+    }
+    return res.status(200).json(updatedUser);
+    
   } catch (err) {
     next(err);
   }
 });
 
 //Delete user
-router.delete("/:id", (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
   try {
+     const deleteUser = await User.findByIdAndDelete(req.params.id);
+
+    if (!deleteUser) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+
+    res.status(200).json({
+      message: "User successfully deleted",
+    });
   } catch (err) {
     next(err);
   }
