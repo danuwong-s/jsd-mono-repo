@@ -16,7 +16,14 @@ router.get("/pg", async (req, res, next) => {
 // Create user
 router.post("/pg", async (req, res, next) => {
   try {
+const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+      return res.status(400).json({ error: "Missing you like crazy." });
+    }
+const { data, error } = await supabase.from("users").insert([{ username, email, password }]);
 
+if (error) throw error;
+return res.status(201).json("")
   } catch (err) {
     next(err);
   }
@@ -25,7 +32,13 @@ router.post("/pg", async (req, res, next) => {
 //Update user 
 router.put("/pg/:id", async (req, res, next) => {
   try {
+const { username, email, password } = req.params;
+ if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json("error: username, email and password are required!");}
 
+        const { data, error } = await supabase.rpc("")
     
   } catch (err) {
     next(err);
