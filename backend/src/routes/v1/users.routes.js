@@ -5,7 +5,7 @@ import { users } from "../../fakeDB/fakeUsers.js";
 export const router = Router();
 
 // Read users
-router.get("/users", (req, res, next) => {
+router.get("/", (req, res, next) => {
     try {
         res.json(users);
     } catch (err) {
@@ -15,7 +15,7 @@ router.get("/users", (req, res, next) => {
 });
 
 // Create user
-router.post("/users", (req, res, next) => {
+router.post("/", (req, res, next) => {
     try { 
           const { username, email, password } = req.body;
 
@@ -50,7 +50,7 @@ router.post("/users", (req, res, next) => {
 });
 
 //Update user
-router.put("/users/:id", (req, res, next) => {
+router.put("/:id", (req, res, next) => {
     try {
         const user = users.find((u) => u.id === req.params.id);
 
@@ -77,9 +77,9 @@ router.put("/users/:id", (req, res, next) => {
 });
 
 //Delete user
-router.delete("/users/:id", (req, res, next) => {
+router.delete("/:id", (req, res, next) => {
     try {  
-        const index = users.findIndex(()=>u.id === req.params.id)
+        const index = users.findIndex((u) => u.id === req.params.id)
 
         if(index === -1) {
             return res.status(404).json({ error: "User not found!"});

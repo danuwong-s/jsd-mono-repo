@@ -3,6 +3,7 @@ import { users } from "./fakeDB/fakeUsers.js";
 import { router as apiRoutes } from "./routes/index.js";
 import { connectDB } from "./config/db.js";
 import { connectSupabase } from "./config/supabase.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
