@@ -1,101 +1,179 @@
 import express from "express";
 import { users } from "./fakeDB/fakeUsers.js";
+import { router as apiRoutes } from "./routes/index.js";
+import { connectDB } from "./config/db.js";
+import { connectSupabase } from "./config/supabase.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(express.json());
 
-// CRUD routes
+// CRUD routes and endpoints
 
-// Read users
-app.get("/users", (req, res, next) => {
-    try {
-        res.json(users);
-    } catch (err) {
-        next(err)
-    }
-  
-});
+app.get("/", (req, res) => { `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Express Matrix</title>
 
-// Create user
-app.post("/users", (req, res, next) => {
-    try { 
-          const { username, email, password } = req.body;
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  if (!username || !email || !password) {
-    return res
-      .status(400)
-      .json({ error: "error: username, email and password are required!" });
-  }
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
 
-  const highestID = users.reduce(
-    (max, user) => Math.max(max, Number(user.id)),
-    0,
-  );
+      #matrix-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
 
-  const nextId = String(highestID + 1);
+      .matrix-panel {
+        background: rgba(0, 8, 2, 0.82);
+        border: 1px solid rgba(34, 197, 94, 0.45);
+        box-shadow:
+          0 0 30px rgba(34, 197, 94, 0.15),
+          inset 0 0 30px rgba(34, 197, 94, 0.05);
+        backdrop-filter: blur(6px);
+      }
 
-  const newUser = {
-    id: nextId,
-    username: username,
-    email: email,
-    password: password,
-  };
+      .matrix-text {
+        text-shadow:
+          0 0 5px #22c55e,
+          0 0 15px rgba(34, 197, 94, 0.7);
+      }
+    </style>
+  </head>
 
-  users.push(newUser);
+  <body class="min-h-screen text-green-400">
+    <canvas id="matrix-canvas" aria-hidden="true"></canvas>
 
-  return res.status(201).json(newUser);
-    } catch (err) {
-        next()
-    }
+    <main class="relative z-10 flex min-h-screen items-center justify-center p-6">
+      <section class="matrix-panel w-full max-w-2xl rounded-xl p-8 font-mono">
+        <div class="mb-6 text-xs uppercase tracking-[0.35em] text-green-700">
+          System connection established
+        </div>
 
+        <h1 class="matrix-text text-3xl font-bold tracking-tight text-green-400 md:text-4xl">
+          Hello Client, I am your Server!
+        </h1>
 
-});
+        <p class="mt-4 leading-relaxed text-green-600">
+          The Express system is online. Your connection has been accepted.
+        </p>
 
-//Update user
-app.put("/users/:id", (req, res, next) => {
-    try {
-        const user = users.find((u) => u.id === req.params.id);
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a
+            href="/users"
+            class="inline-flex items-center rounded border border-green-500
+                   bg-green-500/10 px-5 py-2.5 text-sm font-bold
+                   uppercase tracking-wider text-green-400 transition
+                   hover:bg-green-500 hover:text-black
+                   focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            GET /users
+          </a>
 
-    if(!user){
-        return res.status(404).json({error: "User not found!" });
-    }
+          <span class="text-xs text-green-800">
+            Try POST / PUT / DELETE using your API client.
+          </span>
+        </div>
 
-    const { username, email, password } = req.body;
+        <footer class="mt-10 border-t border-green-950 pt-5 text-xs text-green-800">
+          Express server // status: operational
+        </footer>
+      </section>
+    </main>
 
-    if(!username || !email || !password){
-        return res.status(400).json({ error: "username, email and password are requred!"});
-    }
+    <script>
+      const canvas = document.getElementById("matrix-canvas");
+      const context = canvas.getContext("2d");
 
-    user.username = username;
-    user.email = email;
-    user.password = password;
+      const characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" +
+        "アイウエオカキクケコサシスセソタチツテト" +
+        "ナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
 
-    return res.status(200).json(user);
-    } catch (err) {
-        next(err)
-    }
-    
+      const fontSize = 16;
+      let columns = 0;
+      let drops = [];
+      let animationTimer;
 
-});
+      function resizeCanvas() {
+        const pixelRatio = window.devicePixelRatio || 1;
 
-//Delete user
-app.delete("/users/:id", (req, res, next) => {
-    try {  
-        const index = users.findIndex(()=>u.id === req.params.id)
+        canvas.width = window.innerWidth * pixelRatio;
+        canvas.height = window.innerHeight * pixelRatio;
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
 
-        if(index === -1) {
-            return res.status(404).json({ error: "User not found!"});
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+        columns = Math.ceil(window.innerWidth / fontSize);
+        drops = Array.from(
+          { length: columns },
+          () => Math.floor(Math.random() * -50)
+        );
+      }
+
+      function drawMatrix() {
+        context.fillStyle = "rgba(0, 0, 0, 0.06)";
+        context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+        context.font = fontSize + "px monospace";
+
+        for (let column = 0; column < drops.length; column++) {
+          const character =
+            characters[Math.floor(Math.random() * characters.length)];
+
+          const x = column * fontSize;
+          const y = drops[column] * fontSize;
+
+          context.fillStyle =
+            Math.random() > 0.97 ? "#d1fae5" : "#00ff41";
+
+          context.fillText(character, x, y);
+
+          if (
+            y > window.innerHeight &&
+            Math.random() > 0.975
+          ) {
+            drops[column] = 0;
+          }
+
+          drops[column]++;
         }
+      }
 
-        const [deleted] = users.splice(index, 1);
+      function startAnimation() {
+        clearInterval(animationTimer);
+        animationTimer = setInterval(drawMatrix, 45);
+      }
 
-        return res.json(deleted)
+      resizeCanvas();
 
-    } catch (err) {
-        next(err);
-    }
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        startAnimation();
+      } else {
+        context.fillStyle = "#000";
+        context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+    </script>
+  </body>
+</html>`
+
 });
+
+
+app.use("/api", apiRoutes);
 
 //Centralized/Global Error Handling Middleware
 app.use ((err, req, res, next)=>{
@@ -107,6 +185,18 @@ app.use ((err, req, res, next)=>{
 
 const PORT = 3001;
 
-app.listen(PORT, () => {
+async function start (){
+    try {
+        await connectDB();
+
+        await connectSupabase();
+        app.listen(PORT, () => {
   console.log(`Server running on PORT:${PORT} ✅`);
 });
+    } catch (err) {
+        console.error("Failed to connect to MongDB:", err.message)
+        process.exit(1);
+    }
+}
+
+start();

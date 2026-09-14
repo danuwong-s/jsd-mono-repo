@@ -1,0 +1,19 @@
+@baseUrl = http://localhost:3001/api/v2/users
+
+@email = 
+@password = 
+
+### Login success
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}",
+}
+
+### Logout users
+POST {{baseUrl}}/users/logout
+
+### Check user token
+GET {{baseUrl}}/users/auth
