@@ -11,3 +11,9 @@ Content-Type: application/json
     "email": "{{email}}",
     "password": "{{password}}",
 }
+
+### Logout users
+POST {{baseUrl}}/users/logout
+
+### Check user token
+GET {{baseUrl}}/users/auth
